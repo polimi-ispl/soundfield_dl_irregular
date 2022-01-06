@@ -1,5 +1,5 @@
 # Deep Learning-based Soundfield Synthesis using Irregular Loudspeaker arrays
-├─ data_lib                               # Data generation module
+|--data_lib                               # Data generation module
 |  ├── soundfield_generation_wideband.py  # Contains class for data generation
 ├─ dataset                                # Dataset
 |  ├── masks                              # Contains masks used to create irregular array
