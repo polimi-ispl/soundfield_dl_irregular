@@ -1,4 +1,9 @@
 # Deep Learning-based Soundfield Synthesis using Irregular Loudspeaker arrays
+
+Project organization
+---
+Folders and files are organized as it follows.
+```bash
 ├─ data_lib                               # Data generation module<br />
 |  ├── soundfield_generation_wideband.py  # Contains class for data generation<br />
 ├─ dataset                                # Dataset<br />
@@ -13,4 +18,4 @@
 ├──test_pwdr_pwdr_holes_pwdr_cnn.py       # Computes SSIM and NMSE using PWDR, PWDR_holes and PWDR-CNN<br />
 ├── train.py                              # Trains the network<br />
 └── README.md<br />
-
+```
