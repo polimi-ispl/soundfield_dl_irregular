@@ -10,7 +10,6 @@ import random
 from train_lib import network_utils
 from train_lib import train_utils
 from train_lib import params_wideband
-from sklearn.model_selection import train_test_split
 from tqdm import tqdm
 
 
@@ -100,7 +99,6 @@ def main():
     tfrecord_paths_train = tfrecord_paths[n_val_tfrecords:]
 
     # Reshape mask to take into account different frequencies
-    #mask = np.tile(np.expand_dims(mask, axis=2), (1, 1, nfft))
 
     def _parse(serialized_example):
         feature = {
@@ -134,7 +132,6 @@ def main():
     val_ds = tf.data.TFRecordDataset(tfrecord_paths_val, compression_type='ZLIB')
     val_ds = val_ds.map(_parse, num_parallel_calls=AUTOTUNE)
 
-    #beta = tf.convert_to_tensor(1.0)
     loss_fn = tf.keras.losses.MeanSquaredError()
     metric_fn_train_real = tf.keras.metrics.MeanSquaredError()
     metric_fn_train_imag = tf.keras.metrics.MeanSquaredError()
@@ -142,20 +139,11 @@ def main():
     metric_fn_val_real = tf.keras.metrics.MeanSquaredError()
     metric_fn_val_imag = tf.keras.metrics.MeanSquaredError()
 
-    # mask = np.ones(shape=N_mics)
-    # missing_mics = 32
-    # broken_loudspeaker_idx = np.random.choice(np.arange(N_mics),size=32,replace=False)
-    # mask[broken_loudspeaker_idx] = 0
-    # np.save('/nas/home/lcomanducci/soundfield_synthesis/dataset/masks/mask_missing_loudspeakers_32_mics_16_realization_0.npy', mask)
     mask = np.load(mask_path)
     mask = np.concatenate([mask, mask])
     mask = np.expand_dims(mask, axis=(0, 2))
     mask = np.tile(mask, (batch_size, 1, nfft)).astype('float32')
     mask = tf.convert_to_tensor(np.expand_dims(mask, axis=3))
-
-
-
-    #plt.figure(), plt.subplot(211), plt.plot(mask[2,:,0]), plt.subplot(212), plt.plot(mask[31,:,113]), plt.show()
 
     # Second training
     network_model_filters = network_utils.filter_compensation_model_wideband_skipped(filter_shape, nfft)

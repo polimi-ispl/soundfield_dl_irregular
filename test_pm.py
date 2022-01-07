@@ -5,7 +5,6 @@ os.environ['CUDA_ALLOW_GROWTH'] = 'True'
 import argparse
 import tensorflow as tf
 import matplotlib.pyplot as plt
-import time
 from train_lib import  params_wideband
 from tqdm import tqdm
 from skimage.metrics import structural_similarity as ssim
@@ -16,21 +15,7 @@ def normalize(x):
     max_x = x.max()
     x_norm = (x - min_x)/(max_x-min_x)
     return x_norm
-"""
-def soundfield_NMSE(P_gt, P_est):
-    # Compute NMSE W.R.T. GT
-    # Compute NMSE W.R.T. GT
-    # Compute NMSE W.R.T. GT
-    examples_gt = P_gt.shape[0]
-    examples_est = P_est.shape[0]
-    assert examples_est == examples_est
-    gt_reshaped = np.reshape(P_gt, newshape=(examples_gt, -1))
-    est_reshaped = np.reshape(P_est, newshape=(examples_est, -1))
 
-    abs_diff = np.abs(gt_reshaped - est_reshaped)
-    NMSE = 10 * np.log10(np.mean(np.mean(abs_diff, axis=1))/np.mean(np.mean(np.abs(gt_reshaped), axis=1)))
-    return NMSE
-"""
 
 def NMSE(P_gt, P_hat):
     P_gt = normalize(np.abs(P_gt))
@@ -40,10 +25,7 @@ def NMSE(P_gt, P_hat):
     P_hat = np.reshape(P_hat, newshape=(P_hat.shape[0], -1))
 
     NMSE_s = np.sum(np.power(np.abs(P_gt-P_hat), 2), axis=1)/np.sum(np.power(np.abs(P_gt), 2))
-
     NMSE_ = 10*np.log10(np.mean(NMSE_s))
-
-    #NMSE_ = 10*np.log10((NMSE_s))
 
     return NMSE_
 
@@ -97,7 +79,7 @@ def main():
     number_mics = args.number_mics
     number_missing_mics = args.number_missing_mics
     n_realization = args.n_realization
-    #directivity_pattern ='dipole'
+
     # Soundfield params (this is not right place)
     d = 0.063  # Spacing between sensors
     M = 64
@@ -125,11 +107,7 @@ def main():
     x_u_tile = np.tile(np.expand_dims(x_u, axis=1), (1, M, 1, 1))
     x_m_tile = np.tile(np.expand_dims(np.expand_dims(x_m, axis=2), axis=3), (1, 1, Nx, Ny))
     dist = np.linalg.norm(x_m_tile - x_u_tile, axis=0)
-    dist = tf.convert_to_tensor(dist, dtype=tf.complex128)
-
-    missing_loudspeakers = 22
     N_realizations = 1
-    PLOT = False
 
     for n_r in range(N_realizations):
         print('ciao')
@@ -137,10 +115,7 @@ def main():
         data = np.load(
             '/nas/home/lcomanducci/soundfield_synthesis/dataset/data_src_wideband_'
             + directivity_pattern + '_W_' + str(W) + '_test.npz')
-        print('diosialodoato')
-        h_freq = data['h_']
         P_gt = data['P_gt']
-        print('diosialodoatodenovo')
 
         # Green function matrix (needed for pressure matching)
         x_u_tile = np.tile(np.expand_dims(x_u, axis=1), (1, M, 1, 1))
@@ -164,11 +139,7 @@ def main():
         print(' Number of control points: '+str(len(x_idx_)))
 
         N_sources = P_gt.shape[0]
-        """
-        n_f = 48
-        n_s = 2071
-        number_missing_mics = 32
-        """
+
         for number_missing_mics in [16, 32, 48]:
             print('Number of missing loudspeakers '+str(number_missing_mics))
             P_est_hole_comp_pm = np.zeros_like(P_gt)
@@ -182,6 +153,7 @@ def main():
 
             # Compute indices corresponding to missing loudspeakers
             idx_missing_mics = np.where(mask == 0)
+
             """ Now let's perform pressure matching following 
                 - Koyama, Shoichi, Keisuke Kimura, and Natsuki Ueno. 
                 "Sound field reproduction with weighted mode matching and infinite-dimensional harmonic analysis: 
@@ -190,12 +162,6 @@ def main():
                 - 
                 - code partially taken from https://github.com/sh01k/MeshRIR
             """
-
-            # This was for test
-            #n_s = 2071  # source_index
-            #idx_missing_mics = []
-            #number_missing_mics=0
-
 
             # extract only control points from Green function matrix
             G_cp = np.transpose(G[y_idx_, x_idx_, :], axes=[2, 0, 1])
@@ -233,7 +199,6 @@ def main():
 
                 do_plot = False
                 if do_plot:
-                    #n_f = 48
                     ssim_temp = ssim_abs_soundfield\
                         (np.expand_dims(P_gt[n_s, :, :, n_f],axis=0),
                          np.expand_dims(P_est_hole_comp_pm[n_s, :, :, n_f],axis=0))
@@ -249,28 +214,8 @@ def main():
                     plt.show()
                     np.save('soundfield_plot/pm_point.npy', np.real(P_est_hole_comp_pm[n_s, :, :, n_f]))
 
-            """
-            plt.rcParams.update({
-                "text.usetex": True,
-                "font.family": "sans-serif",
-                "font.sans-serif": ["Helvetica"],
-                'font.size': 20})
-
-            print('PWDR_hole_CNN')
-            plt.figure()
-            plt.imshow(np.real(P_est_hole_comp_pm[n_s, :, :, n_f]),
-                       aspect='auto'), plt.colorbar(), plt.gca().invert_yaxis()
-            plt.xlabel('$x[m]$', fontsize=35), plt.ylabel('$y[m]$', fontsize=35)
-            plt.tick_params(axis='both', which='major', labelsize=35)
-            # plt.title('$\mathrm{PWDR-CNN}^{\circ}$')
-
-            plt.savefig('soundfield_plot/PWDR_hole_pm_' + str(directivity_pattern) + '.pdf', bbox_inches='tight')
-
-            plt.show()
-            """
             print('Cycle through frequencies')
             for n_f in tqdm(range(len(params_wideband.wc))):
-                #wc = params_wideband.wc[n_f]
                 NMSE_method_holes_pm[n_f] = NMSE(P_gt[:, :, :, n_f], P_est_hole_comp_pm[:, :, :, n_f])
                 SSIM_method_holes_pm[n_f] = ssim_abs_soundfield(P_gt[:, :, :, n_f], P_est_hole_comp_pm[:, :, :, n_f])
 

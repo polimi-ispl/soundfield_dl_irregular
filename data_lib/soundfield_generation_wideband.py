@@ -39,9 +39,9 @@ class SoundFieldRenderingGeneration:
         self.x_m = np.array([np.arange((-d * M / 2) + d / 2, (d * M / 2), d), np.zeros(M) + 1])
         self. x_u = np.array([X, Y])
         self.Fs = Fs  # Sampling rate
-        self.l = l #######
-        self.L = L #####
-        self.d = d
+        self.l = l
+        self.L = L
+        self.d = d # Loudspeaker spacing
         self.nfft = int(nfft/2 + 1)
 
         # FRST params
@@ -97,7 +97,6 @@ class SoundFieldRenderingGeneration:
         # Shift positions
         x_s = x_s + shift
 
-
         D = np.zeros(shape=(self.N_subarrays, self.nfft), dtype=complex)
         for n_sub in range(self.N_subarrays):
             x, y = pol2cart(r, alpha_i[n_sub])
@@ -142,7 +141,6 @@ class SoundFieldRenderingGeneration:
 
     def estimate_beamforming_filters(self, a):
         F = np.zeros((self.W, self.N_subarrays, self.nfft), dtype=complex)
-        #F2 = np.zeros((self.W, self.N_subarrays, self.nfft), dtype=complex)
         band_factor = np.arange(1, self.nfft+1)/self.nfft
         for n_s in range(self.N_subarrays):
             Gamma = np.sinc(2 * np.pi * np.expand_dims(
@@ -151,17 +149,7 @@ class SoundFieldRenderingGeneration:
                     / self.c,axis=2) * self.Fs * band_factor).astype('complex128')
             for n_f in range(self.nfft):
                 F[:, n_s, n_f] = (np.linalg.inv(Gamma[:, :, n_f]) @ a[:, n_s, n_f]) / (np.conj(a[:, n_s, n_f]).T @ np.linalg.inv(Gamma[:, :, n_f]) @ a[:, n_s, n_f])
-
-            #F[:, n_s, :] = (np.einsum('ijk,jk->jk', np.linalg.inv(Gamma.T).T, a[:, n_s, :])) / np.einsum('ab,ab->b', np.einsum('jk,jik->jk', np.conj(a[:, n_s, :]), np.linalg.inv(Gamma.T).T), a[:, n_s, :])
         return F
-    """
-    plt.figure()
-    plt.subplot(211)
-    plt.plot(np.abs((np.conj(a[:, n_s, n_f]).T @ np.linalg.inv(Gamma[:, :, n_f])))),
-    plt.subplot(212)
-    plt.plot(np.abs(np.einsum('jk,jik->jk', np.conj(a[:, n_s, :]), np.linalg.inv(Gamma.T).T)[:, n_f]))
-    plt.show()
-    """
 
     def estimate_driving_coefficients(self, D, F, wc, tau):
 
@@ -213,54 +201,22 @@ def compute_data_full_array(SRG_inst, x_s, wc_axis, directivity_pattern):
     
     # Estimate Directivity function
     D = SRG_inst.estimate_directivity_function(wc_axis,  alpha_i, x_s, shift, directivity_pattern, r=4)
-    #idx_f = np.random.randint(0, len(wc_axis))
-    #plt.figure(), plt.subplot(211), plt.plot(np.abs(D[:, idx_f])), plt.subplot(212), plt.plot(np.angle(D[:,idx_f])), plt.show()
-
 
     tau = SRG_inst.estimate_travel_time_vector(x_s, shift)
-    #plt.figure(),plt.subplot(211),plt.plot(np.abs(tau)),plt.subplot(212),plt.plot(np.angle(tau)),plt.show()
 
     # Estimate Steering vectors
     a = SRG_inst.estimate_steering_vectors(alpha_i, wc_axis)
-    #idx_f = np.random.randint(0, len(wc_axis))
-    #plt.figure(), plt.subplot(211), plt.plot(np.abs(a[:, :, idx_f])), plt.subplot(212), plt.plot(np.angle(a[:, :, idx_f])), plt.show()
 
     # Estimate beamforming filters
     F = SRG_inst.estimate_beamforming_filters(a)
 
-    #idx_f = np.random.randint(0, len(wc_axis))
-    #plt.figure(), plt.subplot(211),plt.plot(np.abs(F[:,:,idx_f])),plt.subplot(212),plt.plot(np.angle(F[:,:,idx_f])),plt.show()
-
     # Compute driving coefficients for one freq
     h = SRG_inst.estimate_driving_coefficients(D, F, wc_axis, tau)
-    #idx_f = np.random.randint(0, len(wc_axis))
-    #plt.figure(),plt.subplot(211),plt.plot(np.abs(h[:, idx_f])),plt.subplot(212),plt.plot(np.angle(h[:, idx_f])),plt.show()
 
     # Estimate soundfields
     p_est = SRG_inst.estimate_soundfield(wc_axis, h)
 
     p_gt = SRG_inst.estimate_gt_soundfield(x_s, wc_axis, shift, directivity_pattern)
-
-    """
-    figure = plt.figure(figsize=(20, 10))
-    idx_f = np.random.randint(0, len(wc_axis))
-    plt.subplot(131)
-    plt.title('Sounfield Re{} Est filters')
-    plt.imshow(np.real(p_est[:, :, idx_f]), aspect='auto'), plt.colorbar(), plt.gca().invert_yaxis()
-    plt.xlabel('x [m]'), plt.ylabel('y [m]')
-    plt.tight_layout()
-    plt.subplot(132)
-    plt.title('Sounfield Re{} Gt filters holes')
-    plt.imshow(np.real(p_gt[:, :, idx_f]), aspect='auto'), plt.colorbar(), plt.gca().invert_yaxis()
-    plt.xlabel('x [m]'), plt.ylabel('y [m]')
-    plt.tight_layout()
-    plt.subplot(133)
-    plt.title('Sounfield Re{} Gt filters')
-    plt.plot(np.real(h))
-    plt.xlabel('x [m]'), plt.ylabel('y [m]')
-    plt.tight_layout()
-    plt.show()
-    """
 
     return h, p_est, p_gt
 

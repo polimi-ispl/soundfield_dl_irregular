@@ -1,15 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import time
 import tensorflow as tf
 from data_lib import soundfield_generation_wideband as s_g_w
-from train_lib import network_utils as n_u
-
-"""
-https://jonasteuwen.github.io/numpy/python/multiprocessing/2017/01/07/multiprocessing-numpy-array.html
-"""
-
-
 import os
 import argparse
 os.environ['CUDA_VISIBLE_DEVICES'] = '0'
@@ -102,8 +94,8 @@ def main():
 
             shift = SRG_inst.compute_shift(x_s)
             SRG_inst.shift_data(shift)
-        np.savez('dataset/data_src_wideband_'+directivity_pattern+'_W_'+str(W)+'_test.npz', P_est=P_est, P_gt=P_gt, h_= h_ ,)
-    print('done')
+        np.savez('dataset/data_src_wideband_'+directivity_pattern+'_W_'+str(W)+'_test.npz',
+                 P_est=P_est, P_gt=P_gt, h_=h_)
 
 
 if __name__ =='__main__':

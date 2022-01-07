@@ -4,8 +4,6 @@ os.environ['CUDA_VISIBLE_DEVICES'] = ''
 os.environ['CUDA_ALLOW_GROWTH'] = 'True'
 import argparse
 import tensorflow as tf
-import matplotlib.pyplot as plt
-import time
 from train_lib import  params_wideband
 from tqdm import tqdm
 from skimage.metrics import structural_similarity as ssim
@@ -16,21 +14,7 @@ def normalize(x):
     max_x = x.max()
     x_norm = (x - min_x)/(max_x-min_x)
     return x_norm
-"""
-def soundfield_NMSE(P_gt, P_est):
-    # Compute NMSE W.R.T. GT
-    # Compute NMSE W.R.T. GT
-    # Compute NMSE W.R.T. GT
-    examples_gt = P_gt.shape[0]
-    examples_est = P_est.shape[0]
-    assert examples_est == examples_est
-    gt_reshaped = np.reshape(P_gt, newshape=(examples_gt, -1))
-    est_reshaped = np.reshape(P_est, newshape=(examples_est, -1))
 
-    abs_diff = np.abs(gt_reshaped - est_reshaped)
-    NMSE = 10 * np.log10(np.mean(np.mean(abs_diff, axis=1))/np.mean(np.mean(np.abs(gt_reshaped), axis=1)))
-    return NMSE
-"""
 
 def NMSE(P_gt, P_hat):
     P_gt = normalize(np.abs(P_gt))
@@ -42,8 +26,6 @@ def NMSE(P_gt, P_hat):
     NMSE_s = np.sum(np.power(np.abs(P_gt-P_hat), 2), axis=1)/np.sum(np.power(np.abs(P_gt), 2))
 
     NMSE_ = 10*np.log10(np.mean(NMSE_s))
-
-    #NMSE_ = 10*np.log10((NMSE_s))
 
     return NMSE_
 
@@ -182,7 +164,6 @@ def main():
             np.savez('results/SSIM_wideband_' + directivity_pattern + '_W_' + str(W) + '_loudspeaker_' + str(number_missing_mics) + '_realization_' + str(n_realization) + '_complex.npz', SSIM_method=SSIM_method,
                      SSIM_method_holes=SSIM_method_holes,
                      SSIM_method_holes_NN=SSIM_method_holes_NN)
-
 
 if __name__ == '__main__':
     main()

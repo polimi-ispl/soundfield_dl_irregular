@@ -1,8 +1,7 @@
 import argparse
 import os
-import numpy as np
 import tensorflow as tf
-
+import numpy as np
 from tqdm import tqdm
 
 """
@@ -32,10 +31,6 @@ def main():
     P_gt_data = data['P_gt']
     h_data = data['h_']
 
-    #P_gt_data = np.zeros(shape=(100,64,64,129),dtype=complex)
-    #h_data = np.zeros(shape=(100,64,129),dtype=complex)
-
-    print('done')
     N_examples = h_data.shape[0]
     # Create Train TFRECORDS
     N_SHARDS = int(np.ceil(N_examples/EXAMPLES_PER_RECORD))
@@ -56,7 +51,6 @@ def main():
 
             for n_t in range(begin, end):
                 # Read data
-
                 P_gt = P_gt_data[n_t]  # Soundfield
                 h = h_data[n_t]  # Filters
 
@@ -76,7 +70,6 @@ def main():
 
     print('TFRecords SAVED')
 
-import numpy as np
 
-if __name__=='__main__':
+if __name__== '__main__':
     main()
